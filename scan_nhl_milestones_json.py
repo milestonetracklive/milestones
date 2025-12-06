@@ -1,14 +1,18 @@
 import requests
 import pandas as pd
 import time
-import json  # Import JSON library
+import json
 
 # --- CONFIGURATION ---
 STAT_TYPE = 'goals'         # OPTIONS: 'goals', 'points', 'assists'
 MILESTONE_STEP = 100        # Increment (e.g., 100 goals, 1000 points)
 WITHIN_RANGE = 15           # Alert if within this range
 MIN_CAREER_STAT = 80        # Filter out rookies
-OUTPUT_FILE = "nhl_milestones.json" # Changing to JSON
+OUTPUT_FILE = "nhl_milestones.json"
+
+# --- CRITICAL FIX: INCREASE DELAY ---
+# Match NBA stability time
+SLEEP_TIME = 1.0 # Pause for 1.0 seconds between each player check
 # ---------------------
 
 TEAM_ABBREVIATIONS = [
@@ -20,6 +24,7 @@ TEAM_ABBREVIATIONS = [
 
 def scan_nhl_active_players():
     print(f"--- NHL MILESTONE SCANNER (JSON MODE) ---")
+    print(f"Target: Players within {WITHIN_RANGE} {STAT_TYPE} of a {MILESTONE_STEP} {STAT_TYPE} mark.")
     
     active_player_ids = set()
     candidates = []
@@ -29,6 +34,8 @@ def scan_nhl_active_players():
     for team in TEAM_ABBREVIATIONS:
         try:
             url = f"https://api-web.nhle.com/v1/roster/{team}/current"
+            # NOTE: NHL API often does not require custom headers, but we add a short sleep
+            time.sleep(0.1) 
             r = requests.get(url)
             if r.status_code == 200:
                 data = r.json()
@@ -39,13 +46,16 @@ def scan_nhl_active_players():
         except Exception:
             pass
             
-    print(f"Found {len(active_player_ids)} active players. Fetching career stats...")
+    print(f"Found {len(active_player_ids)} active players. Starting scan...")
     
     player_list = list(active_player_ids)
     
+    # Expected runtime for NHL: ~700 players * 1.0 sec = 700 seconds (approx 11.6 minutes total)
+    print(f"Expected scan time: Approx. {len(player_list) * SLEEP_TIME / 60:.1f} minutes.")
+
     for i, (pid, name) in enumerate(player_list):
         if i % 50 == 0:
-            print(f"  Scanning... {i}/{len(player_list)}")
+            print(f"  Scanning... {i}/{len(player_list)} ({name})")
             
         try:
             url = f"https://api-web.nhle.com/v1/player/{pid}/landing"
@@ -57,16 +67,10 @@ def scan_nhl_active_players():
                 # Use official Career Totals
                 career_totals = data.get('careerTotals', {}).get('regularSeason', {})
                 
-                if career_totals and STAT_TYPE in career_totals:
-                    career_val = career_totals.get(STAT_TYPE, 0)
-                else:
-                    season_totals = data.get('seasonTotals', [])
-                    career_val = 0
-                    for season in season_totals:
-                        if season.get('leagueAbbrev') == 'NHL' and season.get('gameTypeId') == 2:
-                            career_val += season.get(STAT_TYPE, 0)
+                career_val = career_totals.get(STAT_TYPE, 0)
                 
                 if career_val < MIN_CAREER_STAT:
+                    time.sleep(SLEEP_TIME)
                     continue
 
                 next_milestone = ((int(career_val) // MILESTONE_STEP) + 1) * MILESTONE_STEP
@@ -75,7 +79,6 @@ def scan_nhl_active_players():
                 if needed <= WITHIN_RANGE:
                     print(f"  [!] MATCH: {name}")
                     
-                    # We structure this dictionary specifically for the Javascript to read easily
                     candidates.append({
                         "player_name": name,
                         "team": data.get('currentTeamAbbrev', 'N/A'),
@@ -85,22 +88,25 @@ def scan_nhl_active_players():
                         "stat_type": STAT_TYPE
                     })
             
-            time.sleep(0.05)
+            # Polite Rate Limiting
+            time.sleep(SLEEP_TIME)
             
-        except Exception:
-            pass
+        except Exception as e:
+            # If any specific player fails, log the error and take a long nap
+            print(f"CRITICAL API FAILURE for {name}. Taking a 30 second nap...")
+            time.sleep(30)
+            continue
+
 
     # Save to JSON
     if candidates:
-        # Sort by needed
         candidates.sort(key=lambda x: x['needed'])
         
         with open(OUTPUT_FILE, 'w') as f:
             json.dump(candidates, f, indent=4)
-        print(f"\nSaved {len(candidates)} players to '{OUTPUT_FILE}'")
+        print(f"\n[SUCCESS] Saved {len(candidates)} players to '{OUTPUT_FILE}'")
     else:
         print("No players found within range.")
-        # Create empty list so JS doesn't crash
         with open(OUTPUT_FILE, 'w') as f:
             json.dump([], f)
 
