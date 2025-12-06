@@ -2,6 +2,7 @@ import requests
 import pandas as pd
 import time
 import json
+import random # Added for randomized sleep intervals
 
 # --- CONFIGURATION ---
 STAT_TYPE = 'goals'         # OPTIONS: 'goals', 'points', 'assists'
@@ -10,9 +11,9 @@ WITHIN_RANGE = 15           # Alert if within this range
 MIN_CAREER_STAT = 80        # Filter out rookies
 OUTPUT_FILE = "nhl_milestones.json"
 
-# --- CRITICAL FIX: INCREASE DELAY ---
-# Match NBA stability time
-SLEEP_TIME = 1.0 # Pause for 1.0 seconds between each player check
+# --- CRITICAL FIX: INCREASE DELAY & RANDOMIZE ---
+# Increased to 1.2s baseline + random jitter (0.1 to 0.5s) to bypass rate limits
+SLEEP_TIME = 1.2 
 # ---------------------
 
 TEAM_ABBREVIATIONS = [
@@ -34,8 +35,8 @@ def scan_nhl_active_players():
     for team in TEAM_ABBREVIATIONS:
         try:
             url = f"https://api-web.nhle.com/v1/roster/{team}/current"
-            # NOTE: NHL API often does not require custom headers, but we add a short sleep
-            time.sleep(0.1) 
+            # Increased sleep time for roster fetch, which happens in quick succession
+            time.sleep(0.5) 
             r = requests.get(url)
             if r.status_code == 200:
                 data = r.json()
@@ -50,8 +51,9 @@ def scan_nhl_active_players():
     
     player_list = list(active_player_ids)
     
-    # Expected runtime for NHL: ~700 players * 1.0 sec = 700 seconds (approx 11.6 minutes total)
-    print(f"Expected scan time: Approx. {len(player_list) * SLEEP_TIME / 60:.1f} minutes.")
+    # Expected runtime will increase slightly with the longer sleep time
+    expected_time = len(player_list) * SLEEP_TIME / 60
+    print(f"Expected scan time: Approx. {expected_time:.1f} minutes.")
 
     for i, (pid, name) in enumerate(player_list):
         if i % 50 == 0:
@@ -70,7 +72,8 @@ def scan_nhl_active_players():
                 career_val = career_totals.get(STAT_TYPE, 0)
                 
                 if career_val < MIN_CAREER_STAT:
-                    time.sleep(SLEEP_TIME)
+                    # Add jitter for low-stat players too
+                    time.sleep(SLEEP_TIME + random.uniform(0.1, 0.5))
                     continue
 
                 next_milestone = ((int(career_val) // MILESTONE_STEP) + 1) * MILESTONE_STEP
@@ -88,8 +91,8 @@ def scan_nhl_active_players():
                         "stat_type": STAT_TYPE
                     })
             
-            # Polite Rate Limiting
-            time.sleep(SLEEP_TIME)
+            # Polite Rate Limiting with Jitter
+            time.sleep(SLEEP_TIME + random.uniform(0.1, 0.5))
             
         except Exception as e:
             # If any specific player fails, log the error and take a long nap
