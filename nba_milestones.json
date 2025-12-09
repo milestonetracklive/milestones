@@ -1,25 +1,17 @@
 [
     {
-        "player_name": "Naz Reid",
-        "team": "MIN",
-        "current_stat": 4997,
-        "target_milestone": 5000,
-        "needed": 3,
-        "stat_type": "points"
-    },
-    {
-        "player_name": "Donovan Mitchell",
-        "team": "CLE",
-        "current_stat": 13993,
-        "target_milestone": 14000,
-        "needed": 7,
-        "stat_type": "points"
-    },
-    {
         "player_name": "Jeff Green",
         "team": "HOU",
-        "current_stat": 17990,
+        "current_stat": 17992,
         "target_milestone": 18000,
+        "needed": 8,
+        "stat_type": "points"
+    },
+    {
+        "player_name": "Jalen Williams",
+        "team": "OKC",
+        "current_stat": 3990,
+        "target_milestone": 4000,
         "needed": 10,
         "stat_type": "points"
     },
@@ -32,19 +24,19 @@
         "stat_type": "points"
     },
     {
-        "player_name": "Jalen Williams",
-        "team": "OKC",
-        "current_stat": 3965,
-        "target_milestone": 4000,
-        "needed": 35,
-        "stat_type": "points"
-    },
-    {
         "player_name": "Kelly Oubre Jr.",
         "team": "PHI",
         "current_stat": 9944,
         "target_milestone": 10000,
         "needed": 56,
+        "stat_type": "points"
+    },
+    {
+        "player_name": "Trey Murphy III",
+        "team": "NOP",
+        "current_stat": 3932,
+        "target_milestone": 4000,
+        "needed": 68,
         "stat_type": "points"
     },
     {
@@ -58,49 +50,73 @@
     {
         "player_name": "Tyrese Maxey",
         "team": "PHI",
-        "current_stat": 6898,
+        "current_stat": 6926,
         "target_milestone": 7000,
-        "needed": 102,
-        "stat_type": "points"
-    },
-    {
-        "player_name": "Dwight Powell",
-        "team": "DAL",
-        "current_stat": 4887,
-        "target_milestone": 5000,
-        "needed": 113,
+        "needed": 74,
         "stat_type": "points"
     },
     {
         "player_name": "Jaren Jackson Jr.",
         "team": "MEM",
-        "current_stat": 7886,
+        "current_stat": 7892,
         "target_milestone": 8000,
-        "needed": 114,
+        "needed": 108,
         "stat_type": "points"
     },
     {
         "player_name": "Marvin Bagley III",
         "team": "WAS",
-        "current_stat": 4885,
+        "current_stat": 4891,
         "target_milestone": 5000,
-        "needed": 115,
+        "needed": 109,
         "stat_type": "points"
     },
     {
-        "player_name": "Trey Murphy III",
-        "team": "NOP",
-        "current_stat": 3877,
-        "target_milestone": 4000,
-        "needed": 123,
+        "player_name": "Dwight Powell",
+        "team": "DAL",
+        "current_stat": 4891,
+        "target_milestone": 5000,
+        "needed": 109,
+        "stat_type": "points"
+    },
+    {
+        "player_name": "Luka Don\u010di\u0107",
+        "team": "LAL",
+        "current_stat": 14881,
+        "target_milestone": 15000,
+        "needed": 119,
+        "stat_type": "points"
+    },
+    {
+        "player_name": "Nikola Joki\u0107",
+        "team": "DEN",
+        "current_stat": 16881,
+        "target_milestone": 17000,
+        "needed": 119,
+        "stat_type": "points"
+    },
+    {
+        "player_name": "Evan Mobley",
+        "team": "CLE",
+        "current_stat": 4866,
+        "target_milestone": 5000,
+        "needed": 134,
         "stat_type": "points"
     },
     {
         "player_name": "Gary Harris",
         "team": "MIL",
-        "current_stat": 6862,
+        "current_stat": 6864,
         "target_milestone": 7000,
-        "needed": 138,
+        "needed": 136,
+        "stat_type": "points"
+    },
+    {
+        "player_name": "Deandre Ayton",
+        "team": "LAL",
+        "current_stat": 6863,
+        "target_milestone": 7000,
+        "needed": 137,
         "stat_type": "points"
     },
     {
@@ -112,59 +128,19 @@
         "stat_type": "points"
     },
     {
-        "player_name": "Nikola Joki\u0107",
-        "team": "DEN",
-        "current_stat": 16853,
-        "target_milestone": 17000,
-        "needed": 147,
-        "stat_type": "points"
-    },
-    {
-        "player_name": "Luka Don\u010di\u0107",
-        "team": "LAL",
-        "current_stat": 14850,
-        "target_milestone": 15000,
-        "needed": 150,
-        "stat_type": "points"
-    },
-    {
-        "player_name": "Deandre Ayton",
-        "team": "LAL",
-        "current_stat": 6849,
-        "target_milestone": 7000,
-        "needed": 151,
-        "stat_type": "points"
-    },
-    {
-        "player_name": "Evan Mobley",
-        "team": "CLE",
-        "current_stat": 4848,
-        "target_milestone": 5000,
-        "needed": 152,
-        "stat_type": "points"
-    },
-    {
-        "player_name": "Ivica Zubac",
-        "team": "LAC",
-        "current_stat": 6845,
-        "target_milestone": 7000,
-        "needed": 155,
-        "stat_type": "points"
-    },
-    {
         "player_name": "Bogdan Bogdanovi\u0107",
         "team": "LAC",
-        "current_stat": 7839,
+        "current_stat": 7848,
         "target_milestone": 8000,
-        "needed": 161,
+        "needed": 152,
         "stat_type": "points"
     },
     {
         "player_name": "John Collins",
         "team": "LAC",
-        "current_stat": 7834,
+        "current_stat": 7846,
         "target_milestone": 8000,
-        "needed": 166,
+        "needed": 154,
         "stat_type": "points"
     },
     {
@@ -184,6 +160,14 @@
         "stat_type": "points"
     },
     {
+        "player_name": "Gary Trent Jr.",
+        "team": "MIL",
+        "current_stat": 6827,
+        "target_milestone": 7000,
+        "needed": 173,
+        "stat_type": "points"
+    },
+    {
         "player_name": "Daniel Gafford",
         "team": "DAL",
         "current_stat": 4825,
@@ -200,11 +184,27 @@
         "stat_type": "points"
     },
     {
-        "player_name": "Gary Trent Jr.",
+        "player_name": "James Harden",
+        "team": "LAC",
+        "current_stat": 30818,
+        "target_milestone": 31000,
+        "needed": 182,
+        "stat_type": "points"
+    },
+    {
+        "player_name": "Bobby Portis",
         "team": "MIL",
-        "current_stat": 6816,
-        "target_milestone": 7000,
-        "needed": 184,
+        "current_stat": 8812,
+        "target_milestone": 9000,
+        "needed": 188,
+        "stat_type": "points"
+    },
+    {
+        "player_name": "Paul George",
+        "team": "PHI",
+        "current_stat": 18810,
+        "target_milestone": 19000,
+        "needed": 190,
         "stat_type": "points"
     },
     {
@@ -216,14 +216,6 @@
         "stat_type": "points"
     },
     {
-        "player_name": "Bobby Portis",
-        "team": "MIL",
-        "current_stat": 8805,
-        "target_milestone": 9000,
-        "needed": 195,
-        "stat_type": "points"
-    },
-    {
         "player_name": "Dejounte Murray",
         "team": "NOP",
         "current_stat": 7803,
@@ -232,11 +224,11 @@
         "stat_type": "points"
     },
     {
-        "player_name": "Paul George",
-        "team": "PHI",
-        "current_stat": 18798,
-        "target_milestone": 19000,
-        "needed": 202,
+        "player_name": "Derrick White",
+        "team": "BOS",
+        "current_stat": 7793,
+        "target_milestone": 8000,
+        "needed": 207,
         "stat_type": "points"
     },
     {
@@ -256,19 +248,19 @@
         "stat_type": "points"
     },
     {
+        "player_name": "Nickeil Alexander-Walker",
+        "team": "ATL",
+        "current_stat": 4788,
+        "target_milestone": 5000,
+        "needed": 212,
+        "stat_type": "points"
+    },
+    {
         "player_name": "Derrick Jones Jr.",
         "team": "LAC",
         "current_stat": 3787,
         "target_milestone": 4000,
         "needed": 213,
-        "stat_type": "points"
-    },
-    {
-        "player_name": "James Harden",
-        "team": "LAC",
-        "current_stat": 30784,
-        "target_milestone": 31000,
-        "needed": 216,
         "stat_type": "points"
     },
     {
@@ -288,19 +280,27 @@
         "stat_type": "points"
     },
     {
-        "player_name": "Nickeil Alexander-Walker",
-        "team": "ATL",
-        "current_stat": 4771,
-        "target_milestone": 5000,
-        "needed": 229,
+        "player_name": "Andrew Wiggins",
+        "team": "MIA",
+        "current_stat": 16774,
+        "target_milestone": 17000,
+        "needed": 226,
         "stat_type": "points"
     },
     {
-        "player_name": "Derrick White",
-        "team": "BOS",
-        "current_stat": 7766,
-        "target_milestone": 8000,
-        "needed": 234,
+        "player_name": "Zach LaVine",
+        "team": "SAC",
+        "current_stat": 15768,
+        "target_milestone": 16000,
+        "needed": 232,
+        "stat_type": "points"
+    },
+    {
+        "player_name": "Norman Powell",
+        "team": "MIA",
+        "current_stat": 10764,
+        "target_milestone": 11000,
+        "needed": 236,
         "stat_type": "points"
     },
     {
@@ -308,14 +308,6 @@
         "team": "SAC",
         "current_stat": 11761,
         "target_milestone": 12000,
-        "needed": 239,
-        "stat_type": "points"
-    },
-    {
-        "player_name": "Andrew Wiggins",
-        "team": "MIA",
-        "current_stat": 16761,
-        "target_milestone": 17000,
         "needed": 239,
         "stat_type": "points"
     }
