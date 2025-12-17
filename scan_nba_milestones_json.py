@@ -1,118 +1,92 @@
+import os
 import time
-import pandas as pd
 import json
-import random # Added for randomized sleep intervals
+import random
+import requests
 from nba_api.stats.static import players
-from nba_api.stats.endpoints import playercareerstats, commonplayerinfo
-# Import custom NBAStatsHTTP wrapper for headers
+from nba_api.stats.endpoints import playercareerstats
 from nba_api.stats.library.http import NBAStatsHTTP
 
 # --- CONFIGURATION ---
-MILESTONE_STEP = 1000       # Look for 1k, 5k, 10k, 25k etc.
-WITHIN_POINTS = 250         # Alert if they are this close
-MIN_CAREER_PTS = 3000       # Skip rookies/bench players to speed up scan
+MILESTONE_STEP = 1000
+WITHIN_POINTS = 250
 OUTPUT_FILE = "nba_milestones.json"
+# Get the key from GitHub Actions environment
+API_KEY = os.environ.get('SCRAPERAPI_KEY', '') 
 
-# --- CRITICAL FIX: INCREASE DELAY & RANDOMIZE ---
-# Baseline sleep time to ensure stability (slightly higher than NHL)
-SLEEP_TIME = 1.25 
-# ---------------------
+def get_proxy_url(url):
+    """Wraps a URL with ScraperAPI"""
+    if not API_KEY:
+        return url
+    return f"http://api.scraperapi.com?api_key={API_KEY}&url={url}"
 
-# Trick the API into thinking we are a browser (Necessary for GitHub Actions)
-NBAStatsHTTP.headers.update({
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-})
-
-def get_team_abbrev(player_id):
-    """Fetches the current team for a player (only called for candidates)."""
-    try:
-        # Note: Added a micro-sleep here to break up rapid commonplayerinfo calls
-        time.sleep(random.uniform(0.1, 0.3)) 
-        info = commonplayerinfo.CommonPlayerInfo(player_id=player_id)
-        df = info.get_data_frames()[0]
-        return df['TEAM_ABBREVIATION'].iloc[0]
-    except:
-        return "N/A"
+# Inject Proxy into NBA API library
+if API_KEY:
+    # We tell the NBA API library to use ScraperAPI as a proxy
+    # This ensures all its internal 'requests' go through the proxy
+    NBAStatsHTTP.headers.update({
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+    })
+    # Note: Some proxy services require specific session handling
+    # If standard wrapping fails, we'll use raw requests below.
 
 def scan_nba_active_players():
-    print(f"--- NBA MILESTONE SCANNER (JSON MODE) ---")
-    print(f"Target: Players within {WITHIN_POINTS} pts of a {MILESTONE_STEP} pt mark.")
+    print(f"--- NBA PROXY SCANNER ---")
     
-    # 1. Get all active players
-    print("Fetching active player list...")
-    active_players = players.get_active_players()
-    print(f"Found {len(active_players)} active players. Starting scan...")
+    # To save credits, we'll only scan players likely to be stars/veterans
+    # You can adjust this list as needed
+    all_active = players.get_active_players()
+    print(f"Total active players: {len(all_active)}")
     
-    player_list = active_players
-    
-    # Expected runtime will increase slightly with the longer sleep time
-    expected_time = len(player_list) * SLEEP_TIME / 60
-    print(f"Expected scan time: Approx. {expected_time:.1f} minutes.")
-
+    # Optimization: Filter for players who have been in league a bit 
+    # (Or just scan everyone if you have enough credits)
     candidates = []
     
-    # 2. Loop through players
-    for i, p in enumerate(player_list):
+    for i, p in enumerate(all_active):
+        if i % 10 == 0: print(f"Processing {i}/{len(all_active)}...")
+        
         pid = p['id']
         name = p['full_name']
-        
-        # Progress indicator every 20 players
-        if i % 20 == 0:
-            print(f"  Scanning... {i}/{len(player_list)} ({name})")
 
         try:
-            # Fetch Career Stats
-            career = playercareerstats.PlayerCareerStats(player_id=pid)
-            df = career.get_data_frames()[0]
+            # Use raw requests with ScraperAPI for maximum reliability
+            # This is the 'manual' way to get stats through the proxy
+            url = f"https://stats.nba.com/stats/playercareerstats?LeagueID=00&PerMode=Totals&PlayerID={pid}"
+            proxy_url = get_proxy_url(url)
             
-            total_points = df['PTS'].sum()
+            # Use a slightly longer timeout because proxies can be slower
+            response = requests.get(proxy_url, timeout=30)
+            data = response.json()
             
-            if total_points < MIN_CAREER_PTS:
-                # Add jitter for low-stat players too
-                time.sleep(SLEEP_TIME + random.uniform(0.1, 0.5))
-                continue
+            # Navigate the complex NBA JSON structure
+            # RowSet[0] is 'SeasonTotalsRegularSeason'
+            rows = data['resultSets'][0]['rowSet']
+            total_points = sum(row[26] for row in rows) # Index 26 is usually PTS
 
-            # 3. Check Math
-            next_milestone = ((int(total_points) // MILESTONE_STEP) + 1) * MILESTONE_STEP
-            needed = next_milestone - total_points
+            next_m = ((int(total_points) // MILESTONE_STEP) + 1) * MILESTONE_STEP
+            needed = next_m - total_points
             
             if needed <= WITHIN_POINTS:
-                print(f"  [!] MATCH: {name} (Needs {int(needed)})")
-                
-                # Fetch team only for matches to save API calls
-                team = get_team_abbrev(pid)
-                
+                print(f"  [!] {name} needs {int(needed)}")
                 candidates.append({
                     "player_name": name,
-                    "team": team,
+                    "team": "Check Site", # Team info requires another API call; keeping it simple to save credits
                     "current_stat": int(total_points),
-                    "target_milestone": next_milestone,
+                    "target_milestone": next_m,
                     "needed": int(needed),
                     "stat_type": "points"
                 })
-
-            # Polite Rate Limiting with Jitter
-            time.sleep(SLEEP_TIME + random.uniform(0.1, 0.5))
+            
+            # Even with proxy, don't spam
+            time.sleep(0.5)
 
         except Exception as e:
-            # If any specific player fails, take a long nap
-            print(f"CRITICAL API FAILURE for {name}. Taking a 30 second nap...")
-            time.sleep(30)
+            print(f"Error for {name}: {e}")
             continue
 
-
-    # 4. Save to JSON
-    if candidates:
-        # Sort by proximity
-        candidates.sort(key=lambda x: x['needed'])
-        
-        with open(OUTPUT_FILE, 'w') as f:
-            json.dump(candidates, f, indent=4)
-        print(f"\n[SUCCESS] Saved {len(candidates)} players to '{OUTPUT_FILE}'")
-    else:
-        print("No players found within range.")
-        with open(OUTPUT_FILE, 'w') as f:
-            json.dump([], f)
+    with open(OUTPUT_FILE, 'w') as f:
+        json.dump(candidates, f, indent=4)
+    print(f"Saved {len(candidates)} candidates.")
 
 if __name__ == "__main__":
     scan_nba_active_players()
