@@ -3,18 +3,16 @@ import time
 import json
 import requests
 import random
+from nba_api.stats.static import players # Use the local player database
 
 # --- CONFIG ---
 MILESTONE_STEP = 1000
 WITHIN_POINTS = 250 
 OUTPUT_FILE = "nba_milestones.json"
-# If running locally, you can paste your key here for a quick test:
-# API_KEY = "YOUR_KEY_HERE" 
 API_KEY = os.environ.get('SCRAPERAPI_KEY', '')
 
 def get_proxy_url(url):
     if not API_KEY: 
-        print("  [!] Warning: No API Key found. Running without proxy...")
         return url
     return f"http://api.scraperapi.com?api_key={API_KEY}&url={url}"
 
@@ -24,36 +22,28 @@ def scan_nba():
         print("FATAL: SCRAPERAPI_KEY not found in environment variables.")
         return
 
-    # To get the list of players, we use a lighter internal search first
-    # This endpoint is less likely to be blocked than the stats one
-    print("Fetching player list...")
-    list_url = "https://stats.nba.com/stats/commonallplayers?IsOnlyCurrentSeason=1&LeagueID=00&Season=2023-24"
-    
+    # STEP 1: Get Player List LOCALLY
+    # This doesn't use the network, so it can't be blocked!
+    print("Loading active player list from local database...")
+    all_players = players.get_active_players()
+    print(f"Found {len(all_players)} active players.")
+
     headers = {
         "Host": "stats.nba.com",
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
         "Accept": "application/json, text/plain, */*",
-        "Referer": "https://www.nba.com/"
+        "Referer": "https://www.nba.com/",
+        "Origin": "https://www.nba.com"
     }
-
-    try:
-        res = requests.get(get_proxy_url(list_url), headers=headers, timeout=30)
-        data = res.json()
-        # Row layout: [PERSON_ID, DISPLAY_LAST_COMMA_FIRST, DISPLAY_FIRST_LAST, ...]
-        all_players = data['resultSets'][0]['rowSet']
-        print(f"Found {len(all_players)} active players.")
-    except Exception as e:
-        print(f"Failed to fetch player list: {e}")
-        return
 
     candidates = []
 
-    # To save credits and time, we'll only scan the first 300 (or adjust as needed)
+    # STEP 2: Scan for stats
     for i, p in enumerate(all_players):
-        pid = p[0]
-        name = p[2]
+        pid = p['id']
+        name = p['full_name']
         
-        if i % 10 == 0: print(f"  Checking {i}/{len(all_players)}: {name}...")
+        if i % 20 == 0: print(f"  Checking {i}/{len(all_players)}: {name}...")
 
         try:
             # Stats endpoint
@@ -61,13 +51,20 @@ def scan_nba():
             response = requests.get(get_proxy_url(url), headers=headers, timeout=30)
             
             if response.status_code != 200:
-                print(f"    [!] Blocked on {name} (Status {response.status_code})")
                 continue
                 
-            stats_data = response.json()
-            # Index 26 is Points in Career Totals
+            # Safely attempt to parse JSON
+            try:
+                stats_data = response.json()
+            except Exception:
+                # If it's not JSON, the proxy might be returning an error page
+                continue
+
+            # RowSet[0] is SeasonTotalsRegularSeason
             rows = stats_data['resultSets'][0]['rowSet']
-            total_pts = sum(row[26] for row in rows)
+            total_pts = sum(row[26] for row in rows) # Index 26 is PTS
+
+            if total_pts == 0: continue
 
             next_m = ((int(total_pts) // MILESTONE_STEP) + 1) * MILESTONE_STEP
             needed = next_m - total_pts
@@ -83,15 +80,16 @@ def scan_nba():
                     "target_milestone": next_m,
                     "needed": int(needed),
                     "image_url": img_url,
-                    "team": p[10] if p[10] else "NBA" # Team Name is at index 10
+                    "team": "NBA" 
                 })
             
             # Anti-detection delay
-            time.sleep(random.uniform(0.5, 1.2))
+            time.sleep(random.uniform(0.6, 1.2))
 
         except Exception:
             continue
 
+    # Save results
     with open(OUTPUT_FILE, 'w') as f:
         json.dump(candidates, f, indent=4)
     print(f"SUCCESS: Saved {len(candidates)} players to {OUTPUT_FILE}")
