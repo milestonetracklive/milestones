@@ -1,11 +1,9 @@
 name: Update Milestone Data
 
-# Run this workflow every day at 8:00 AM UTC (approx 3:00 AM EST)
-# AND allow manual triggering with a button click
 on:
   schedule:
-    - cron: '0 8 * * *'
-  workflow_dispatch:
+    - cron: '0 8 * * *' # Runs daily at 3am/4am EST
+  workflow_dispatch: # Allows you to click "Run" manually
 
 permissions:
   contents: write
@@ -13,7 +11,6 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -24,19 +21,19 @@ jobs:
         python-version: '3.9'
 
     - name: Install dependencies
+      run: pip install pandas requests nba_api
+
+    - name: Run NBA & NHL Scanners
+      env:
+        # This line hands the secret to Python
+        SCRAPERAPI_KEY: ${{ secrets.SCRAPERAPI_KEY }}
       run: |
-        pip install -r requirements.txt
-
-    - name: Run NBA Scanner
-      run: python scan_nba_milestones_json.py
-
-    - name: Run NHL Scanner
-      run: python scan_nhl_milestones_json.py
+        python scan_nba_milestones_json.py
+        python scan_nhl_milestones_json.py
 
     - name: Commit and Push changes
       run: |
         git config --global user.name "GitHub Action"
         git config --global user.email "action@github.com"
-        git add nba_milestones.json nhl_milestones.json
-        # Only commit if there are changes
+        git add *.json
         git diff --quiet && git diff --staged --quiet || (git commit -m "Auto-update stats" && git push)
