@@ -14,10 +14,10 @@
         .player-card:hover { transform: translateY(-10px); border-color: rgba(255,255,255,0.2); cursor: pointer; }
         
         /* Modal Animation */
-        .modal-enter { opacity: 0; transform: scale(0.9); }
-        .modal-enter-active { opacity: 1; transform: scale(1); transition: opacity 300ms, transform 300ms; }
+        .modal-enter { opacity: 0; transform: scale(0.95); }
+        .modal-enter-active { opacity: 1; transform: scale(1); transition: all 300ms cubic-bezier(0.34, 1.56, 0.64, 1); }
         .modal-exit { opacity: 1; transform: scale(1); }
-        .modal-exit-active { opacity: 0; transform: scale(0.9); transition: opacity 200ms, transform 200ms; }
+        .modal-exit-active { opacity: 0; transform: scale(0.95); transition: opacity 200ms; }
     </style>
 </head>
 <body class="text-white min-h-screen">
@@ -40,49 +40,87 @@
     </div>
 
     <!-- PLAYER DETAIL MODAL -->
-    <div id="modal-backdrop" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4" onclick="closeModal(event)">
-        <div id="modal-content" class="bg-zinc-900 border border-white/10 rounded-3xl max-w-lg w-full p-8 shadow-2xl relative transform transition-all modal-enter">
+    <div id="modal-backdrop" class="fixed inset-0 bg-black/80 backdrop-blur-md hidden z-50 flex items-center justify-center p-4" onclick="closeModal(event)">
+        <div id="modal-content" class="bg-zinc-900 border border-white/10 rounded-3xl max-w-2xl w-full p-8 shadow-2xl relative transform transition-all modal-enter overflow-hidden">
             
+            <!-- Background Glow -->
+            <div class="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-white/5 to-transparent pointer-events-none"></div>
+
             <!-- Close Button -->
-            <button onclick="closeModal(event, true)" class="absolute top-4 right-4 text-zinc-500 hover:text-white transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+            <button onclick="closeModal(event, true)" class="absolute top-4 right-4 text-zinc-400 hover:text-white transition-colors z-10 p-2 bg-black/20 rounded-full">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
 
-            <!-- Modal Body -->
-            <div class="flex flex-col items-center text-center">
-                <div class="relative mb-6">
-                    <img id="m-image" src="" class="w-32 h-32 object-cover rounded-full border-4 border-white/10 bg-zinc-800 shadow-xl">
-                    <div id="m-team-badge" class="absolute bottom-0 right-0 bg-zinc-800 text-xs font-bold px-2 py-1 rounded border border-zinc-600">TEAM</div>
+            <!-- Modal Header -->
+            <div class="relative flex flex-col md:flex-row items-center gap-6 mb-8 z-10">
+                <div class="relative">
+                    <img id="m-image" src="" class="w-32 h-32 object-cover rounded-full border-4 border-zinc-800 shadow-xl bg-zinc-800">
+                    <img id="m-team-logo" src="" class="absolute -bottom-2 -right-2 w-12 h-12 rounded-full bg-zinc-900 border-2 border-zinc-700 p-1 object-contain" onerror="this.style.display='none'">
                 </div>
                 
-                <h2 id="m-name" class="text-4xl font-black tracking-tight mb-2">Player Name</h2>
-                <p id="m-needed" class="text-xl font-bold text-orange-500 mb-8">Needs 50 Points</p>
-
-                <!-- Stats Grid -->
-                <div class="grid grid-cols-2 gap-4 w-full mb-8">
-                    <div class="bg-zinc-800/50 p-4 rounded-xl border border-white/5">
-                        <p class="text-xs text-zinc-500 uppercase font-bold mb-1">Season Avg</p>
-                        <p id="m-season-avg" class="text-2xl font-black text-white">--</p>
-                    </div>
-                    <div class="bg-zinc-800/50 p-4 rounded-xl border border-white/5">
-                        <p class="text-xs text-zinc-500 uppercase font-bold mb-1">Last 5 Games</p>
-                        <p id="m-last5-avg" class="text-2xl font-black text-white">--</p>
+                <div class="text-center md:text-left flex-1">
+                    <h2 id="m-name" class="text-4xl font-black tracking-tight leading-none mb-2">Player Name</h2>
+                    <p id="m-needed" class="text-2xl font-bold text-orange-500 mb-1">Needs 50 Points</p>
+                    <div class="flex items-center justify-center md:justify-start gap-2 text-sm text-zinc-400 font-mono">
+                        <span id="m-current">Current: 0</span>
+                        <span>•</span>
+                        <span id="m-target">Target: 0</span>
                     </div>
                 </div>
+            </div>
 
-                <!-- Betting Line Placeholder -->
-                <div class="w-full bg-zinc-800/30 p-4 rounded-xl border border-white/5 flex justify-between items-center mb-6">
-                    <div class="text-left">
-                        <p class="text-xs text-zinc-500 uppercase font-bold">Sportsbook Line (Est)</p>
-                        <p class="text-sm text-zinc-400">O/U Points</p>
-                    </div>
-                    <div class="text-right">
-                        <span class="bg-zinc-700 text-zinc-400 text-xs px-2 py-1 rounded">OFFLINE</span>
-                        <p class="text-lg font-bold text-white mt-1">--</p>
-                    </div>
-                </div>
+            <!-- Content Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 
-                <p class="text-xs text-zinc-600 italic">Betting data requires live API subscription.</p>
+                <!-- Stats Column -->
+                <div class="space-y-4">
+                    <div class="bg-zinc-800/50 p-4 rounded-xl border border-white/5 flex justify-between items-center">
+                        <div>
+                            <p class="text-xs text-zinc-500 uppercase font-bold">Season Avg</p>
+                            <p id="m-season-avg" class="text-2xl font-black text-white">--</p>
+                        </div>
+                        <div class="h-8 w-1 bg-white/10 rounded-full"></div>
+                    </div>
+                    
+                    <div class="bg-zinc-800/50 p-4 rounded-xl border border-white/5 flex justify-between items-center">
+                        <div>
+                            <p class="text-xs text-zinc-500 uppercase font-bold">Last 5 Games</p>
+                            <p id="m-last5-avg" class="text-2xl font-black text-white">--</p>
+                        </div>
+                        <div class="h-8 w-1 bg-white/10 rounded-full"></div>
+                    </div>
+                </div>
+
+                <!-- Next Game / Betting Column -->
+                <div class="space-y-4">
+                    <!-- Next Game Card -->
+                    <div id="m-next-game-card" class="bg-gradient-to-br from-zinc-800 to-zinc-900 p-4 rounded-xl border border-white/10 relative overflow-hidden group">
+                        <div class="absolute top-0 right-0 p-2 opacity-10 group-hover:opacity-20 transition-opacity">
+                            <i class="fa-solid fa-calendar text-4xl"></i>
+                        </div>
+                        <p class="text-xs text-zinc-500 uppercase font-bold mb-3">Next Matchup</p>
+                        
+                        <div class="flex items-center gap-4">
+                            <img id="m-opp-logo" src="" class="w-12 h-12 object-contain bg-white/5 rounded-lg p-1" onerror="this.src='https://placehold.co/50x50/333/FFF?text=VS'">
+                            <div>
+                                <p id="m-game-vs" class="font-bold text-lg leading-tight">vs OPP</p>
+                                <p id="m-game-time" class="text-xs text-zinc-400 font-mono mt-1">Today 7:00 PM</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Betting Line -->
+                    <div class="bg-zinc-800/30 p-4 rounded-xl border border-white/5 flex justify-between items-center opacity-75">
+                        <div class="text-left">
+                            <p class="text-xs text-zinc-500 uppercase font-bold">Betting Line</p>
+                            <p class="text-sm text-zinc-400">O/U Pts</p>
+                        </div>
+                        <div class="text-right">
+                            <span class="bg-zinc-700 text-zinc-400 text-[10px] px-2 py-1 rounded font-bold tracking-wider">OFFLINE</span>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </div>
     </div>
@@ -164,23 +202,61 @@
             const modal = document.getElementById('modal-backdrop');
             const content = document.getElementById('modal-content');
             
-            // Populate Data
+            // 1. Basic Info
             document.getElementById('m-name').innerText = player.player_name;
             document.getElementById('m-image').src = player.image_url;
-            document.getElementById('m-team-badge').innerText = player.team || "NBA";
+            document.getElementById('m-current').innerText = `Current: ${player.current_stat.toLocaleString()}`;
+            document.getElementById('m-target').innerText = `Target: ${player.target_milestone.toLocaleString()}`;
             
+            // 2. League Specific Colors & Text
             const statType = league === 'nhl' ? "Goals" : "Points";
-            document.getElementById('m-needed').innerText = `${player.needed} ${statType} Needed`;
-            
-            // Handle stats that might be undefined in older JSONs
+            const accent = league === 'nba' ? 'text-orange-500' : 'text-blue-500';
+            const mNeeded = document.getElementById('m-needed');
+            mNeeded.innerText = `${player.needed} ${statType} Needed`;
+            mNeeded.className = `text-2xl font-bold ${accent} mb-1`;
+
+            // 3. Stats
             document.getElementById('m-season-avg').innerText = player.season_avg ? player.season_avg : "--";
             document.getElementById('m-last5-avg').innerText = player.last_5_avg ? player.last_5_avg : "--";
-            
-            // Color Logic
-            const accent = league === 'nba' ? 'text-orange-500' : 'text-blue-500';
-            document.getElementById('m-needed').className = `text-xl font-bold ${accent} mb-8`;
 
-            // Show
+            // 4. Team Logo Logic
+            const teamLogo = document.getElementById('m-team-logo');
+            if (league === 'nba' && player.team_id) {
+                teamLogo.src = `https://cdn.nba.com/logos/nba/${player.team_id}/global/L/logo.svg`;
+                teamLogo.style.display = 'block';
+            } else if (league === 'nhl' && player.team) {
+                teamLogo.src = `https://assets.nhle.com/logos/nhl/svg/${player.team}_light.svg`;
+                teamLogo.style.display = 'block';
+            } else {
+                teamLogo.style.display = 'none';
+            }
+
+            // 5. Next Game Logic
+            const nextGameCard = document.getElementById('m-next-game-card');
+            if (player.next_game) {
+                nextGameCard.style.display = 'block';
+                const oppLogo = document.getElementById('m-opp-logo');
+                const gameText = document.getElementById('m-game-vs');
+                const gameTime = document.getElementById('m-game-time');
+                
+                // Set Opponent Logo
+                if (league === 'nhl') {
+                    oppLogo.src = `https://assets.nhle.com/logos/nhl/svg/${player.next_game.opponent}_light.svg`;
+                } else {
+                    // For NBA, opponent usually comes as ID or Abbrev. Assuming Abbrev for now if implemented.
+                    // Fallback to placeholder if missing logic
+                    oppLogo.src = 'https://placehold.co/50x50/333/FFF?text=VS';
+                }
+
+                // Set Text
+                const location = player.next_game.is_home ? "vs" : "@";
+                gameText.innerText = `${location} ${player.next_game.opponent}`;
+                gameTime.innerText = player.next_game.date; // E.g., "Tonight 7:00 PM"
+            } else {
+                nextGameCard.style.display = 'none';
+            }
+
+            // Show Modal
             modal.classList.remove('hidden');
             content.classList.remove('modal-exit', 'modal-exit-active');
             content.classList.add('modal-enter-active');
