@@ -12,7 +12,7 @@ MILESTONE_STEP = 100
 WITHIN_RANGE = 15           
 MIN_CAREER_STAT = 80        
 OUTPUT_FILE = "nhl_milestones.json"
-MAX_WORKERS = 5 # Reduced for GitHub stability
+MAX_WORKERS = 5 
 API_KEY = os.environ.get('SCRAPERAPI_KEY', '')
 
 TEAM_ABBREVIATIONS = [
@@ -23,9 +23,6 @@ TEAM_ABBREVIATIONS = [
 ]
 
 def fetch_url(url):
-    """
-    Attempts to fetch data using Proxy first, then Direct connection as fallback.
-    """
     # 1. Try Proxy
     if API_KEY:
         try:
@@ -33,7 +30,6 @@ def fetch_url(url):
             proxy_url = f"http://api.scraperapi.com?api_key={API_KEY}&url={encoded_url}&keep_headers=true"
             r = requests.get(proxy_url, timeout=15)
             if r.status_code == 200: return r.json()
-            elif r.status_code == 403: print("    [!] Proxy Auth Failed. Retrying Direct...")
         except:
             pass
 
@@ -65,11 +61,28 @@ def process_player(player_tuple):
         needed = next_m - career_val
         
         if needed <= WITHIN_RANGE:
-            # IMAGE FIX: Try API first, then fallback
             img_url = data.get('headshot', '')
             if not img_url:
                 img_url = f"https://cms.nhl.bamgrid.com/images/headshots/current/168x168/{pid}.jpg"
             
+            # --- NEW: Calculate Recent Stats ---
+            last_5_games = data.get('last5Games', [])
+            recent_scores = []
+            total_recent = 0
+            
+            for game in last_5_games:
+                val = game.get(STAT_TYPE, 0)
+                recent_scores.append(val)
+                total_recent += val
+                
+            last_5_avg = round(total_recent / 5, 1)
+            
+            # Season Avg (Goals per Game)
+            season_totals = data.get('featuredStats', {}).get('regularSeason', {}).get('subSeason', {})
+            games_played = season_totals.get('gamesPlayed', 1)
+            season_goals = season_totals.get('goals', 0)
+            season_avg = round(season_goals / games_played, 2) if games_played > 0 else 0
+
             return {
                 "player_name": name,
                 "player_id": pid,
@@ -78,7 +91,11 @@ def process_player(player_tuple):
                 "target_milestone": next_m,
                 "needed": int(needed),
                 "image_url": img_url,
-                "stat_type": STAT_TYPE
+                "stat_type": STAT_TYPE,
+                # New Fields
+                "season_avg": season_avg,
+                "last_5_avg": last_5_avg,
+                "recent_scores": recent_scores
             }
     except Exception:
         return None
@@ -92,7 +109,6 @@ def scan_nhl():
 
     print("Fetching active rosters...")
     for team in TEAM_ABBREVIATIONS:
-        # We use fetch_url here too to be safe
         url = f"https://api-web.nhle.com/v1/roster/{team}/current"
         data = fetch_url(url)
         if data:
